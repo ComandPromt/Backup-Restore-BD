@@ -1,2 +1,2 @@
 # Backup-Restore-BD
-MySQL
+Backup/Restore a Database MySQL with configuration file
