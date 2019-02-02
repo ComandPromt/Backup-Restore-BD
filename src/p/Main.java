@@ -1,13 +1,75 @@
 package p;
 
+import java.awt.Font;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.OutputStream;
 
-public class Main {
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 
-	private static void Exportar(int tipo, String pass, String bd) {
+public class Main {
+	public static String[] leerFicheroArray(String fichero, int longitud) {
+		String[] salida = new String[longitud];
+		String texto = "";
+		int i = 0;
+		try {
+			FileReader flE = new FileReader(fichero);
+			BufferedReader fE = new BufferedReader(flE);
+			while (texto != null) {
+				texto = fE.readLine();
+				if (texto != null) {
+					salida[i] = texto;
+					i++;
+				}
+			}
+			fE.close();
+		} catch (IOException e) {
+
+		}
+		return salida;
+	}
+
+	public static void eliminarFichero(String archivo) {
+		File fichero = new File(archivo);
+		if (!fichero.exists()) {
+			mensaje("El archivo " + archivo + " no existe", "ERROR");
+		} else {
+			fichero.delete();
+		}
+
+	}
+
+	public static void mensaje(String mensaje, String titulo) {
+		JLabel alerta = new JLabel(mensaje);
+		alerta.setFont(new Font("Arial", Font.BOLD, 18));
+		int tipo = 0;
+
+		switch (titulo) {
+		case "WARNING":
+			tipo = JOptionPane.WARNING_MESSAGE;
+			break;
+
+		case "INFO":
+			tipo = JOptionPane.INFORMATION_MESSAGE;
+			break;
+
+		case "ERROR":
+			tipo = JOptionPane.ERROR_MESSAGE;
+			break;
+		}
+
+		JOptionPane.showMessageDialog(null, alerta, titulo, tipo);
+
+	}
+
+	public static void exportarBd(int tipo) {
+		String[] lectura = leerFicheroArray("Bd.txt", 3);
 		String ruta = "";
 		switch (tipo) {
 		case 1:
@@ -22,25 +84,27 @@ public class Main {
 
 		}
 		try {
-			Process p = Runtime.getRuntime().exec(ruta + "mysqldump.exe -u root -p" + pass + " " + bd);
-
-			if (p.waitFor() > 0) {
-				InputStream is = p.getInputStream();
-				FileOutputStream fos = new FileOutputStream("C:\\Users\\formacion\\Desktop\\backus.sql");
-				byte[] buffer = new byte[1000];
-
-				int leido = is.read(buffer);
-
-				while (leido > 0) {
-					fos.write(buffer, 0, leido);
-					leido = is.read(buffer);
-				}
-
-				fos.close();
+			FileWriter flS = new FileWriter("backupbd.bat");
+			BufferedWriter fS = new BufferedWriter(flS);
+			fS.write("@echo off");
+			fS.newLine();
+			fS.write(ruta + "mysqldump.exe --no-defaults -h 192.168.1.50 -u User -p" + lectura[2] + " " + lectura[0]
+					+ " >C:\\Users\\User\\Desktop\\backus.sql");
+			fS.newLine();
+			fS.write("exit");
+			fS.close();
+			Runtime aplicacion = Runtime.getRuntime();
+			try {
+				aplicacion.exec("cmd.exe /K backupbd.bat");
+			} catch (Exception e) {
+				System.out.println(e);
 			}
-
+			Process p = Runtime.getRuntime().exec("backupbd.bat");
+			p.destroy();
+			eliminarFichero("backupbd.bat");
+			mensaje("Backup realizado correctamente", "INFO");
 		} catch (Exception e) {
-			e.printStackTrace();
+			mensaje("Error", "ERROR");
 		}
 	}
 
@@ -69,7 +133,7 @@ public class Main {
 	}
 
 	public static void main(String[] args) {
-		Exportar(1, "rootroot", "pruebas");
+		exportarBd(1);
 		restaurar("rootroot", "pruebas", "C:\\Users\\Usuario\\Desktop\\backus.sql");
 	}
 
